@@ -193,58 +193,60 @@ Public Class Funciones
             clsStock.OrderLine(iOrderline) = New Estructura.Lineas
 
             For Each xmlnode As XmlNode In oXml.FirstChild.NextSibling.Item("OrderLine")
-                ReDim Preserve clsStock.OrderLine(iOrderline)
-                clsStock.OrderLine(iOrderline) = New Estructura.Lineas
-                Dim Linea As Estructura.Lineas = New Estructura.Lineas
-                Linea.OrderedArticle = New Estructura.LineasOrderedArticle()
-                Linea.OrderedArticle.ArticleIdentification = New Estructura.LineasArticleIdentificacion()
-                Linea.OrderedArticle.ArticleDescription = New Estructura.LineasArticleDescription()
-                Linea.OrderedArticle.RequestedQuantity = New Estructura.LineasRequestedQuantity()
-                Linea.OrderedArticle.ErrorLIN = New Estructura.LineasError()
-                Linea.OrderedArticle.ScheduleDetails = New Estructura.LineasScheduleDateils()
-                Linea.OrderedArticle.ScheduleDetails.AvailableQuantity = New Estructura.LineasAvailableQuantity()
+                If xmlnode.LocalName.ToString.Trim = "LineID" Then
+                    ReDim Preserve clsStock.OrderLine(iOrderline)
+                    clsStock.OrderLine(iOrderline) = New Estructura.Lineas
+                    Dim Linea As Estructura.Lineas = New Estructura.Lineas
+                    Linea.OrderedArticle = New Estructura.LineasOrderedArticle()
+                    Linea.OrderedArticle.ArticleIdentification = New Estructura.LineasArticleIdentificacion()
+                    Linea.OrderedArticle.ArticleDescription = New Estructura.LineasArticleDescription()
+                    Linea.OrderedArticle.RequestedQuantity = New Estructura.LineasRequestedQuantity()
+                    Linea.OrderedArticle.ErrorLIN = New Estructura.LineasError()
+                    Linea.OrderedArticle.ScheduleDetails = New Estructura.LineasScheduleDateils()
+                    Linea.OrderedArticle.ScheduleDetails.AvailableQuantity = New Estructura.LineasAvailableQuantity()
 
-                Linea.LineID = oXml.FirstChild.NextSibling.Item("OrderLine").Item("LineID").InnerText
+                    Linea.LineID = oXml.FirstChild.NextSibling.Item("OrderLine").Item("LineID").InnerText
 
-                Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").FirstChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
-                'oXml.FirstChild.NextSibling.Item("OrderLine").NextSibling.Item("OrderedArticle").NextSibling.Item("RequestedQuantity").Item("QuantityValue").InnerText
-                Linea.OrderedArticle.Availability = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
+                    Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").FirstChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
+                    'oXml.FirstChild.NextSibling.Item("OrderLine").NextSibling.Item("OrderedArticle").NextSibling.Item("RequestedQuantity").Item("QuantityValue").InnerText
+                    Linea.OrderedArticle.Availability = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
 
 
-                sSQL = "SELECT t1.ItemCode as Codigo, t1.U_SEI_JANCODE as EAN, t1.ItemName as Descripcion, SUM(t2.OnHand - t2.IsCommited) as Stock "
-                sSQL += " From OITM t1 WITH (NOLOCK) INNER JOIN OITW t2 WITH (NOLOCK) on t1.ItemCode=t2.ItemCode "
-                sSQL += " Where t1.U_SEI_JANCODE='" & Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID & "' "
-                sSQL += " GROUP BY t1.ItemCode, t1.U_SEI_JANCODE, t1.ItemName"
-                dtStock = New System.Data.DataTable("Stock")
-                blEXO.FillDtDB(dtStock, sSQL)
-                If dtStock.Rows.Count > 0 Then
-                    Dim sCodigo As String = dtStock.Rows.Item(0).Item("Codigo").ToString
-                    Dim sDescripcion As String = dtStock.Rows.Item(0).Item("Descripcion").ToString
-                    Dim sStock As String = dtStock.Rows.Item(0).Item("Stock").ToString
-                    sStock = Replace(sStock, ",", ".")
-                    Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
-                    Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
-                    Linea.OrderedArticle.RequestedQuantity.QuantityValue = sStock
-                    clsStock.ErrorHead.ErrorCode = 0
-                    Linea.OrderedArticle.ErrorLIN.ErrorCode = 0
-                    Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
-                    If sStock <> "0.000000" Then
-                        Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
+                    sSQL = "SELECT t1.ItemCode as Codigo, t1.U_SEI_JANCODE as EAN, t1.ItemName as Descripcion, SUM(t2.OnHand - t2.IsCommited) as Stock "
+                    sSQL += " From OITM t1 WITH (NOLOCK) INNER JOIN OITW t2 WITH (NOLOCK) on t1.ItemCode=t2.ItemCode "
+                    sSQL += " Where t1.U_SEI_JANCODE='" & Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID & "' "
+                    sSQL += " GROUP BY t1.ItemCode, t1.U_SEI_JANCODE, t1.ItemName"
+                    dtStock = New System.Data.DataTable("Stock")
+                    blEXO.FillDtDB(dtStock, sSQL)
+                    If dtStock.Rows.Count > 0 Then
+                        Dim sCodigo As String = dtStock.Rows.Item(0).Item("Codigo").ToString
+                        Dim sDescripcion As String = dtStock.Rows.Item(0).Item("Descripcion").ToString
+                        Dim sStock As String = dtStock.Rows.Item(0).Item("Stock").ToString
+                        sStock = Replace(sStock, ",", ".")
+                        Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
+                        Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
+                        Linea.OrderedArticle.RequestedQuantity.QuantityValue = sStock
+                        clsStock.ErrorHead.ErrorCode = 0
+                        Linea.OrderedArticle.ErrorLIN.ErrorCode = 0
+                        Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
+                        If sStock <> "0.000000" Then
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
+                        Else
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
+                        End If
+
                     Else
+                        Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = "SIN_VALOR"
+                        Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = "NO LO ENCUENTRA"
+                        Linea.OrderedArticle.RequestedQuantity.QuantityValue = 0
+                        Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
+                        clsStock.ErrorHead.ErrorCode = 1 ' Preguntar si cuando no encuentra el codigo EAN que error devolvemos
+                        Linea.OrderedArticle.ErrorLIN.ErrorCode = 1
                         Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
                     End If
-
-                Else
-                    Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = "SIN_VALOR"
-                    Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = "NO LO ENCUENTRA"
-                    Linea.OrderedArticle.RequestedQuantity.QuantityValue = 0
-                    Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
-                    clsStock.ErrorHead.ErrorCode = 1 ' Preguntar si cuando no encuentra el codigo EAN que error devolvemos
-                    Linea.OrderedArticle.ErrorLIN.ErrorCode = 1
-                    Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
+                    clsStock.OrderLine(iOrderline) = Linea
+                    iOrderline += 1
                 End If
-                clsStock.OrderLine(iOrderline) = Linea
-                iOrderline += 1
             Next
 
 
@@ -289,6 +291,7 @@ Public Class Funciones
         Finally
             Dim Res As String = Nothing
             Res = sw.ToString
+            Res = Replace(Res, "<string xmlns=""http://schemas.microsoft.com/2003/10/Serialization/"">", "")
             Res = Replace(Res, "Stock", "ew:quote_A2")
             Res = Replace(Res, "utf-16", "UTF-8")
             Res = Replace(Res, "ErrorLIN", "Error")

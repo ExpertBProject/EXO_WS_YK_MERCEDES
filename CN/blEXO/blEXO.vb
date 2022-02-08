@@ -163,16 +163,19 @@ Public Class blEXO
                 Throw New Exception("No encuentra la serie para generar el pedido")
             End If
 
-            strCliente = oxml.FirstChild.NextSibling.Item("BuyerParty").Item("PartyID").InnerText
-            strComprobar = GetValueDB("""OCRD""", """CardCode""", """U_EXO_BUYERPARTY"" ='" & strCliente & "'")
-            If strComprobar = "" Then
-                'No existe el cliente
-                Throw New Exception("El cliente " & strCliente & " no existe en la base de datos")
-            Else
-                strCliente = strComprobar
-            End If
+            strCliente = "13512"
+            'strCliente = oxml.FirstChild.NextSibling.Item("BuyerParty").Item("PartyID").InnerText
+            'strComprobar = GetValueDB("""OCRD""", """CardCode""", """U_EXO_BUYERPARTY"" ='" & strCliente & "'")
+            'If strComprobar = "" Then
+            '    'No existe el cliente
+            '    Throw New Exception("El cliente " & strCliente & " no existe en la base de datos")
+            'Else
+            '    strCliente = strComprobar
+            'End If
 
-            strDestino = GetValueDB("""OCRD""", """ShipToDef""", """CardCode"" ='" & strCliente & "'")
+            'strDestino = GetValueDB("""OCRD""", """ShipToDef""", """CardCode"" ='" & strCliente & "'")
+            strDestino = oxml.FirstChild.NextSibling.Item("BuyerParty").Item("PartyID").InnerText
+            strDestino = GetValueDB("""OCRD""", """Address""", """CardCode"" ='" & strCliente & "' and ""U_EXO_CODGS""='" & strDestino & "' ")
             oORDR.ShipToCode = strDestino
             'Hacer consulta getvaluedb para saber si existe el pedido ORDR
             strRef = oxml.FirstChild.NextSibling.Item("CustomerReference").Item("DocumentID").InnerText
