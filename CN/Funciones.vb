@@ -211,31 +211,35 @@ Public Class Funciones
                     'oXml.FirstChild.NextSibling.Item("OrderLine").NextSibling.Item("OrderedArticle").NextSibling.Item("RequestedQuantity").Item("QuantityValue").InnerText
                     'Linea.OrderedArticle.Availability = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
 
+                    Dim iPedido As Integer = CType(DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText, Integer)
 
                     sSQL = "SELECT t1.ItemCode as Codigo, t1.U_SEI_JANCODE as EAN, t1.ItemName as Descripcion, SUM(t2.OnHand - t2.IsCommited) as Stock "
+                    sSQL += " , convert(varchar,isnull((SELECT top 1 Barco_Fecha FROM [dbo].[EXO_CantidadesBarcos] (t1.ItemCode," & iPedido.ToString & ")  order by Barco_Fecha desc),'99991231'),23) as 'Fecha_Barco' "
                     sSQL += " From OITM t1 WITH (NOLOCK) INNER JOIN OITW t2 WITH (NOLOCK) on t1.ItemCode=t2.ItemCode "
                     sSQL += " Where t1.U_SEI_JANCODE='" & Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID & "' "
                     sSQL += " GROUP BY t1.ItemCode, t1.U_SEI_JANCODE, t1.ItemName"
                     dtStock = New System.Data.DataTable("Stock")
                     blEXO.FillDtDB(dtStock, sSQL)
                     If dtStock.Rows.Count > 0 Then
-
                         Dim sCodigo As String = dtStock.Rows.Item(0).Item("Codigo").ToString
                         Dim sDescripcion As String = dtStock.Rows.Item(0).Item("Descripcion").ToString
                         Dim sStock As String = dtStock.Rows.Item(0).Item("Stock").ToString
                         sStock = Replace(sStock, ",000000", "")
                         'Comprobar Stock
-                        Dim iPedido As Integer = CType(DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText, Integer)
+
                         Dim iStock As Integer = CType(sStock, Integer)
                         If iStock >= iPedido Then
                             Linea.OrderedArticle.Availability = 1
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = iPedido.ToString
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
                         ElseIf iStock = 0 Then
                             Linea.OrderedArticle.Availability = 3
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
                         Else
                             Linea.OrderedArticle.Availability = 2
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
                         End If
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
                         Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
@@ -243,12 +247,11 @@ Public Class Funciones
                         clsStock.ErrorHead.ErrorCode = 0
                         Linea.OrderedArticle.ErrorLIN.ErrorCode = 0
 
-                        If sStock <> "0" Then
-                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
-                        Else
-                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
-                        End If
-
+                        'If iStock <> 0 Then
+                        '    Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
+                        'Else
+                        '    Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
+                        'End If
                     Else
                         Linea.OrderedArticle.Availability = 3
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = "SIN_VALOR"
