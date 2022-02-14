@@ -229,18 +229,21 @@ Public Class Funciones
                         Dim iStock As Integer = CType(sStock, Integer)
                         If iStock >= iPedido Then
                             Linea.OrderedArticle.Availability = 1
+                            Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = iPedido.ToString
                         ElseIf iStock = 0 Then
                             Linea.OrderedArticle.Availability = 3
+                            Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
                         Else
                             Linea.OrderedArticle.Availability = 2
+                            Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
                         End If
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
                         Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
-                        Linea.OrderedArticle.RequestedQuantity.QuantityValue = sStock
+                        Linea.OrderedArticle.RequestedQuantity.QuantityValue = iPedido.ToString
                         clsStock.ErrorHead.ErrorCode = 0
                         Linea.OrderedArticle.ErrorLIN.ErrorCode = 0
-                        Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
-                        If sStock <> "0.000000" Then
+
+                        If sStock <> "0" Then
                             Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
                         Else
                             Linea.OrderedArticle.ScheduleDetails.DeliveryDate = "9999-12-31"
