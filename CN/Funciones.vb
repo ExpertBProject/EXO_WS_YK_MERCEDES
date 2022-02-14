@@ -209,7 +209,7 @@ Public Class Funciones
 
                     Linea.OrderedArticle.ArticleIdentification.EANUCCArticleID = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").FirstChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
                     'oXml.FirstChild.NextSibling.Item("OrderLine").NextSibling.Item("OrderedArticle").NextSibling.Item("RequestedQuantity").Item("QuantityValue").InnerText
-                    Linea.OrderedArticle.Availability = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
+                    'Linea.OrderedArticle.Availability = DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
 
 
                     sSQL = "SELECT t1.ItemCode as Codigo, t1.U_SEI_JANCODE as EAN, t1.ItemName as Descripcion, SUM(t2.OnHand - t2.IsCommited) as Stock "
@@ -219,10 +219,21 @@ Public Class Funciones
                     dtStock = New System.Data.DataTable("Stock")
                     blEXO.FillDtDB(dtStock, sSQL)
                     If dtStock.Rows.Count > 0 Then
+
                         Dim sCodigo As String = dtStock.Rows.Item(0).Item("Codigo").ToString
                         Dim sDescripcion As String = dtStock.Rows.Item(0).Item("Descripcion").ToString
                         Dim sStock As String = dtStock.Rows.Item(0).Item("Stock").ToString
-                        sStock = Replace(sStock, ",", ".")
+                        sStock = Replace(sStock, ",000000", "")
+                        'Comprobar Stock
+                        Dim iPedido As Integer = CType(DirectCast(DirectCast(oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").LastChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText, Integer)
+                        Dim iStock As Integer = CType(sStock, Integer)
+                        If iStock >= iPedido Then
+                            Linea.OrderedArticle.Availability = 1
+                        ElseIf iStock = 0 Then
+                            Linea.OrderedArticle.Availability = 3
+                        Else
+                            Linea.OrderedArticle.Availability = 2
+                        End If
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
                         Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
                         Linea.OrderedArticle.RequestedQuantity.QuantityValue = sStock
@@ -236,6 +247,7 @@ Public Class Funciones
                         End If
 
                     Else
+                        Linea.OrderedArticle.Availability = 3
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = "SIN_VALOR"
                         Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = "NO LO ENCUENTRA"
                         Linea.OrderedArticle.RequestedQuantity.QuantityValue = 0
@@ -296,6 +308,7 @@ Public Class Funciones
             Res = Replace(Res, "utf-16", "UTF-8")
             Res = Replace(Res, "ErrorLIN", "Error")
             Res = Replace(Res, "Lineas", "OrderLine")
+            Res = Replace(Res, "Variante", "Variant")
             SolicitudStock = Res
 
             If oXml IsNot Nothing Then
