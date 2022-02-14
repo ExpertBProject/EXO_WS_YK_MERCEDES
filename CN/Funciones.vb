@@ -232,7 +232,7 @@ Public Class Funciones
                             Linea.OrderedArticle.Availability = 1
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = iPedido.ToString
                             Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
-                        ElseIf iStock = 0 Then
+                        ElseIf iStock <= 0 Then
                             Linea.OrderedArticle.Availability = 3
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
                             Linea.OrderedArticle.ScheduleDetails.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
