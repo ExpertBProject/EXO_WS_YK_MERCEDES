@@ -10,13 +10,15 @@ Namespace Controllers
         Inherits ApiController
         <HttpPost>
         <Route("")>
-        Public Function Inquiry(<FromBody()> mensaje As XmlElement) As String
+        Public Function Inquiry(<FromBody()> mensaje As XmlElement) As XElement
             Dim ofun As CN.Funciones = New Funciones
             Dim sResultado As String = ""
 
             Dim sInquiry As String = mensaje.InnerXml.Trim
             sResultado = ofun.SolicitudStock(sInquiry)
-            Inquiry = sResultado
+            'Inquiry = sResultado
+
+            Inquiry = XElement.Parse(sResultado)
 
         End Function
     End Class

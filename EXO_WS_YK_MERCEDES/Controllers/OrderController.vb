@@ -10,12 +10,12 @@ Namespace Controllers
 
         <HttpPost>
         <Route("")>
-        Public Function Order(<FromBody()> mensaje As XmlElement) As String
+        Public Function Order(<FromBody()> mensaje As XmlElement) As XElement
             Dim ofun As CN.Funciones = New Funciones
             Dim sResultado As String = ""
             Dim sOrder As String = mensaje.InnerXml.Trim
             sResultado = ofun.CrearPedido(sOrder)
-            Order = sResultado
+            Order = XElement.Parse(sResultado)
         End Function
     End Class
 End Namespace
