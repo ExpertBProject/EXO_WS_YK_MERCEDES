@@ -390,6 +390,7 @@
         Private _RequestedQuantity As LineasRequestedQuantity
         Private _Error As LineasError
         Private _ScheduleDetails As LineasScheduleDateils
+        Private _ScheduleDetails2 As LineasScheduleDateils
 #End Region
 
 #Region "Propiedades"
@@ -439,6 +440,14 @@
             End Get
             Set(ByVal Value As LineasScheduleDateils)
                 _ScheduleDetails = Value
+            End Set
+        End Property
+        Public Property ScheduleDetails2() As LineasScheduleDateils
+            Get
+                Return _ScheduleDetails2
+            End Get
+            Set(ByVal Value As LineasScheduleDateils)
+                _ScheduleDetails2 = Value
             End Set
         End Property
 #End Region

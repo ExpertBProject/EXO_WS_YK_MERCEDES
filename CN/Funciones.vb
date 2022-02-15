@@ -235,11 +235,19 @@ Public Class Funciones
                         ElseIf iStock <= 0 Then
                             Linea.OrderedArticle.Availability = 3
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = 0
-                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
+                            Linea.OrderedArticle.ScheduleDetails2 = New Estructura.LineasScheduleDateils()
+                            Linea.OrderedArticle.ScheduleDetails2.AvailableQuantity = New Estructura.LineasAvailableQuantity()
+                            Linea.OrderedArticle.ScheduleDetails2.AvailableQuantity.QuantityValue = iPedido.ToString
+                            Linea.OrderedArticle.ScheduleDetails2.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
                         Else
                             Linea.OrderedArticle.Availability = 2
                             Linea.OrderedArticle.ScheduleDetails.AvailableQuantity.QuantityValue = sStock
-                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
+                            Linea.OrderedArticle.ScheduleDetails.DeliveryDate = oXml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedDeliveryDate").InnerText
+                            Linea.OrderedArticle.ScheduleDetails2 = New Estructura.LineasScheduleDateils()
+                            Linea.OrderedArticle.ScheduleDetails2.AvailableQuantity = New Estructura.LineasAvailableQuantity()
+                            Linea.OrderedArticle.ScheduleDetails2.AvailableQuantity.QuantityValue = (iPedido - sStock).ToString
+                            Linea.OrderedArticle.ScheduleDetails2.DeliveryDate = dtStock.Rows.Item(0).Item("Fecha_Barco").ToString
                         End If
                         Linea.OrderedArticle.ArticleIdentification.ManufacturersArticleID = sCodigo
                         Linea.OrderedArticle.ArticleDescription.ArticleDescriptionText = sDescripcion
@@ -315,6 +323,7 @@ Public Class Funciones
             Res = Replace(Res, "ErrorLIN", "Error")
             Res = Replace(Res, "Lineas", "OrderLine")
             Res = Replace(Res, "Variante", "Variant")
+            Res = Replace(Res, "ScheduleDetails2", "ScheduleDetails")
             SolicitudStock = Res
 
             If oXml IsNot Nothing Then
