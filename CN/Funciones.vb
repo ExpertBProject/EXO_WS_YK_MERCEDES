@@ -157,6 +157,9 @@ Public Class Funciones
     End Function
     Public Function SolicitudStock(ByVal sxml As String) As String
 
+
+        Dim olog As EXO_Log.EXO_Log = Nothing
+
         Dim clsErrores As New Estructura.Errores()
         Dim sError As String = ""
 
@@ -176,6 +179,10 @@ Public Class Funciones
         Dim ns As XmlSerializerNamespaces = New XmlSerializerNamespaces()
         Dim sw As StringWriter = New StringWriter
         Try
+            Dim sPath As String = "C:\inetpub\logs\ExpertOne"
+            olog = New EXO_Log.EXO_Log(sPath & "\log_mercedes", 50, EXO_Log.EXO_Log.Nivel.todos, 4, "", EXO_Log.EXO_Log.GestionFichero.dia)
+
+            olog.escribeMensaje(sxml.Trim)
             blEXO = New blEXO
             Dim sCab As String = "<?xml version=""1.0"" encoding=""UTF-8""?> <ew:order_A2 xmlns:ew=""http//www.reifen.net"" xmlns:px=""http://www.reifen.net/Core"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">"
             Dim sPie As String = "</ew:order_A2>"
@@ -191,7 +198,7 @@ Public Class Funciones
             Dim iOrderline As Integer = 0
             ReDim clsStock.OrderLine(iOrderline)
             clsStock.OrderLine(iOrderline) = New Estructura.Lineas
-
+            olog.escribeMensaje("Comienza el For")
             For Each xmlnode As XmlNode In oXml.FirstChild.NextSibling.Item("OrderLine")
                 If xmlnode.LocalName.ToString.Trim = "LineID" Then
                     ReDim Preserve clsStock.OrderLine(iOrderline)
@@ -288,7 +295,7 @@ Public Class Funciones
             Else
                 sError = exCOM.Message
             End If
-
+            olog.escribeMensaje(sError)
             clsErrores.TextError = sError
 
             ns = New XmlSerializerNamespaces()
@@ -304,7 +311,7 @@ Public Class Funciones
             Else
                 sError = ex.Message
             End If
-
+            olog.escribeMensaje(sError)
             clsErrores.TextError = sError
 
             ns = New XmlSerializerNamespaces()

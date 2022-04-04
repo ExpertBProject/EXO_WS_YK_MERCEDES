@@ -85,6 +85,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EXO_Log">
+      <HintPath>..\..\..\..\9.1.0.37\x86\desarrollo\EXO_Log.dll</HintPath>
+    </Reference>
     <Reference Include="Interop.SAPbobsCOM">
       <HintPath>..\..\..\..\9.1.0.37\x86\desarrollo\Interop.SAPbobsCOM.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>

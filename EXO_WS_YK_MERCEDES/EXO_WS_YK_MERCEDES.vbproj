@@ -48,6 +48,9 @@
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EXO_Log">
+      <HintPath>..\..\..\..\9.1.0.37\x86\desarrollo\EXO_Log.dll</HintPath>
+    </Reference>
     <Reference Include="Interop.SAPbobsCOM, Version=9.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <EmbedInteropTypes>False</EmbedInteropTypes>
