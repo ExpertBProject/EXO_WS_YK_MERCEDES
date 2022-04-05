@@ -131,6 +131,7 @@ Public Class blEXO
 #Region "Métodos SAP"
     'Crear Pedido
     Public Function AddUpdateORDR(ByRef oxml As XmlDocument) As String
+#Region "Variables"
         Dim oORDR As SAPbobsCOM.Documents = Nothing
         Dim sDocEntry As String = ""
         Dim strNumSerie As String = ""
@@ -149,6 +150,21 @@ Public Class blEXO
         Dim strEstado As String = ""
         Dim strDestino As String = ""
         Dim sAnno As String = ""
+
+        Dim dtEmpleado As System.Data.DataTable = Nothing
+        Dim sEmpVentas As String = "0"
+        Dim dtCeCo As System.Data.DataTable = Nothing
+        Dim sCeCo As String = ""
+        Dim sTipoEcotasa As String = "0"
+        Dim sEcotasa As String = ""
+        Dim cPrecEcotasa As Double = 0
+        Dim dtEcotasa As System.Data.DataTable = Nothing
+        Dim cTotalesEcotasa As Double = 0
+        Dim sPais As String = ""
+
+        Dim sSQL As String = ""
+        Dim bLinPrimera As Boolean = True
+#End Region
 
         AddUpdateORDR = ""
 
@@ -174,9 +190,14 @@ Public Class blEXO
             'End If
 
             'strDestino = GetValueDB("""OCRD""", """ShipToDef""", """CardCode"" ='" & strCliente & "'")
-            strDestino = oxml.FirstChild.NextSibling.Item("BuyerParty").Item("PartyID").InnerText
-            strDestino = GetValueDB("""OCRD""", """Address""", """CardCode"" ='" & strCliente & "' and ""U_EXO_CODGS""='" & strDestino & "' ")
-            oORDR.ShipToCode = strDestino
+            Try
+                strDestino = oxml.FirstChild.NextSibling.Item("BuyerParty").Item("PartyID").InnerText
+                strDestino = GetValueDB("""OCRD""", """Address""", """CardCode"" ='" & strCliente & "' and ""U_EXO_CODGS""='" & strDestino & "' ")
+                oORDR.ShipToCode = strDestino
+            Catch ex As Exception
+
+            End Try
+
             'Hacer consulta getvaluedb para saber si existe el pedido ORDR
             strRef = oxml.FirstChild.NextSibling.Item("CustomerReference").Item("DocumentID").InnerText
             strExiste = GetValueDB("""ORDR""", """DocEntry""", """CardCode""='" & strCliente & "' and ""NumAtCard""='" & strRef & "'")
@@ -246,20 +267,131 @@ Public Class blEXO
             'Comentarios
             oORDR.Comments = " Pedido MERCEDES creado a través de WEB SERVICE. Agency Code " & oxml.FirstChild.NextSibling.Item("BuyerParty").Item("AgencyCode").InnerText
 
-            'Comprobar que exista el articulo
-            Dim sJANCODE As String = oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("ArticleIdentification").Item("EANUCCArticleID").InnerText
-            strCodArt = GetValueDB("""OITM""", """ItemCode""", """U_SEI_JANCODE"" ='" & sJANCODE & "'")
-            If strCodArt = "" Then
-                'No existe el articulo, excepcion y me salgo
-                Throw New Exception("El artículo " & sJANCODE & " no existe en la base de datos")
+            sSQL = "SELECT T0.U_EXO_BonusApl, T0.U_EXO_Desligar, " &
+                   "ISNULL((SELECT ISNULL(TDir.U_SEI_EMPLE, '0') " &
+                   "FROM CRD1 TDir WITH (NOLOCK) WHERE TDir.AdresType = 'S' AND TDir.CardCode = T0.CardCode AND TDir.Address = '" & strDestino & "' ), 0) AS 'Emp', " &
+                   "isnull(T0.SlpCode, 0) AS 'DefecSlp' " &
+                   "FROM OCRD T0 WITH (NOLOCK) " &
+                   "WHERE T0.CardCode = '" & strCliente & "'"
+
+            dtEmpleado = New System.Data.DataTable()
+            FillDtDB(dtEmpleado, sSQL)
+
+            If dtEmpleado.Rows.Count > 0 Then
+                'Empleado del depto. de ventas. Si no esta el de la dir, cojo el de cabecera
+                sEmpVentas = dtEmpleado.Rows.Item(0).Item("Emp").ToString
+                If sEmpVentas = "0" Then
+                    sEmpVentas = dtEmpleado.Rows.Item(0).Item("DefecSlp").ToString
+                End If
+
+                If sEmpVentas <> "0" Then
+                    sSQL = "SELECT isnull(U_CCusto, '') as CeCo FROM OSLP  WITH (NOLOCK) WHERE SlpCode = " & sEmpVentas
+
+                    dtCeCo = New System.Data.DataTable()
+                    FillDtDB(dtCeCo, sSQL)
+
+                    If dtCeCo.Rows.Count > 0 Then
+                        sCeCo = dtCeCo.Rows.Item(0).Item("CeCo").ToString
+                    End If
+                End If
+
+                'Empleado del dpto. de ventas asociado a la direccion
+                If sEmpVentas <> "0" Then
+                    oORDR.SalesPersonCode = CInt(sEmpVentas)
+                End If
             End If
 
-            oORDR.Lines.ItemCode = strCodArt
-            Try
-                oORDR.Lines.Quantity = CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText)
-            Catch ex As Exception
-                Throw New Exception("El artículo " & sJANCODE & " no tiene indicado la cantidad.")
-            End Try
+            sTipoEcotasa = GetValueDB("OEXD WITH (NOLOCK)", "TOP 1 ExpnsCode", "U_EXO_EcoTasa = 'Y'")
+            sPais = GetValueDB("CRD1 WITH (NOLOCK)", "Country", "CardCode='" & strCliente & "' and Address='" & strDestino & "' and AdresType='S'")
+
+
+            For Each xmlnode As XmlNode In oxml.FirstChild.NextSibling.Item("OrderLine")
+                If xmlnode.LocalName.ToString.Trim = "LineID" Then
+                    If bLinPrimera = False Then
+                        oORDR.Lines.Add()
+                    Else
+                        bLinPrimera = False
+                    End If
+
+                    Dim sJANCODE As String = DirectCast(DirectCast(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").FirstChild, System.Xml.XmlElement).LastChild, System.Xml.XmlElement).InnerText
+                    strCodArt = GetValueDB("""OITM""", """ItemCode""", """U_SEI_JANCODE"" ='" & sJANCODE & "'")
+                    If strCodArt = "" Then
+                        'No existe el articulo, excepcion y me salgo
+                        Throw New Exception("El artículo " & sJANCODE & " no existe en la base de datos")
+                    End If
+
+                    oORDR.Lines.ItemCode = strCodArt
+                    Try
+                        oORDR.Lines.Quantity = CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText)
+                    Catch ex As Exception
+                        Throw New Exception("El artículo " & sJANCODE & " no tiene indicado la cantidad.")
+                    End Try
+
+                    'ecostasa para portes
+                    cPrecEcotasa = 0
+                    sEcotasa = ""
+
+                    'Como sacar tipo ecotasa España (Portugal lo mismo pero con su campo)
+                    If sPais.ToUpper = "ES" Then
+                        sSQL = "SELECT isnull(T0.U_TXECOVATORSP, '') AS 'TipoEcotasa', isnull(T0.U_SEI_TXECOVATORSPE, 0) AS 'ValorEcotasa' " &
+                           "FROM OITM T0 WITH (NOLOCK) WHERE T0.ItemCode = '" & strCodArt & "'"
+                        dtEcotasa = New System.Data.DataTable
+                        FillDtDB(dtEcotasa, sSQL)
+
+                        If dtEcotasa.Rows.Count > 0 Then
+                            sEcotasa = dtEcotasa.Rows(0).Item("TipoEcotasa").ToString
+                            cPrecEcotasa = CDbl(dtEcotasa.Rows(0).Item("ValorEcotasa").ToString.Replace(".", ","))
+                        End If
+                    ElseIf sPais.ToUpper = "PT" Then
+                        sSQL = "SELECT isnull(T0.U_SEI_TXECOTPT, '') AS 'TipoEcotasa', isnull(T0.U_SEI_TX_ECOPTE, 0) AS 'ValorEcotasa' " &
+                           "FROM OITM T0 WITH (NOLOCK) WHERE T0.ItemCode = '" & strCodArt & "'"
+
+                        FillDtDB(dtEcotasa, sSQL)
+
+                        If dtEcotasa.Rows.Count > 0 Then
+                            sEcotasa = dtEcotasa.Rows(0).Item("TipoEcotasa").ToString
+                            cPrecEcotasa = CDbl(dtEcotasa.Rows(0).Item("ValorEcotasa").ToString.Replace(".", ","))
+                        End If
+                    End If
+                    sSQL = "Select dbo.[EXOPrecioClientePed]('" + strCliente + "' , '" + strCodArt + "', " + strNumSerie + ") as ""Precio"" "
+                    Dim dtprecio = New System.Data.DataTable("Precio")
+
+                    FillDtDB(dtprecio, sSQL)
+                    Dim sPrecio As String = ""
+                    If dtprecio.Rows.Count > 0 Then
+                        sPrecio = (dtprecio.Rows(0).Item("Precio").ToString)
+                    End If
+                    oORDR.Lines.Price = CDbl(sPrecio)
+
+                    If sEcotasa <> "" Then
+                        oORDR.Lines.UserFields.Fields.Item("U_EXO_EcoCod").Value = sEcotasa
+                        oORDR.Lines.UserFields.Fields.Item("U_EXO_EcoPric").Value = cPrecEcotasa
+                        oORDR.Lines.UserFields.Fields.Item("U_EXO_EcoImp").Value = CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText) * cPrecEcotasa
+                        cTotalesEcotasa += CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText) * cPrecEcotasa
+                    End If
+
+                    If sCeCo <> "" Then
+                        oORDR.Lines.CostingCode = sCeCo
+                        oORDR.Lines.COGSCostingCode = sCeCo
+                    End If
+
+
+                End If
+            Next
+            'Comprobar que exista el articulo
+            'Dim sJANCODE As String = oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("ArticleIdentification").Item("EANUCCArticleID").InnerText
+            'strCodArt = GetValueDB("""OITM""", """ItemCode""", """U_SEI_JANCODE"" ='" & sJANCODE & "'")
+            'If strCodArt = "" Then
+            '    'No existe el articulo, excepcion y me salgo
+            '    Throw New Exception("El artículo " & sJANCODE & " no existe en la base de datos")
+            'End If
+
+            'oORDR.Lines.ItemCode = strCodArt
+            'Try
+            '    oORDR.Lines.Quantity = CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText)
+            'Catch ex As Exception
+            '    Throw New Exception("El artículo " & sJANCODE & " no tiene indicado la cantidad.")
+            'End Try
 
 
             If strExiste <> "" Then
