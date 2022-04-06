@@ -378,20 +378,11 @@ Public Class blEXO
 
                 End If
             Next
-            'Comprobar que exista el articulo
-            'Dim sJANCODE As String = oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("ArticleIdentification").Item("EANUCCArticleID").InnerText
-            'strCodArt = GetValueDB("""OITM""", """ItemCode""", """U_SEI_JANCODE"" ='" & sJANCODE & "'")
-            'If strCodArt = "" Then
-            '    'No existe el articulo, excepcion y me salgo
-            '    Throw New Exception("El artículo " & sJANCODE & " no existe en la base de datos")
-            'End If
-
-            'oORDR.Lines.ItemCode = strCodArt
-            'Try
-            '    oORDR.Lines.Quantity = CDbl(oxml.FirstChild.NextSibling.Item("OrderLine").Item("OrderedArticle").Item("RequestedQuantity").Item("QuantityValue").InnerText)
-            'Catch ex As Exception
-            '    Throw New Exception("El artículo " & sJANCODE & " no tiene indicado la cantidad.")
-            'End Try
+            If cTotalesEcotasa <> 0 Then
+                oORDR.Expenses.SetCurrentLine(0)
+                oORDR.Expenses.ExpenseCode = CInt(sTipoEcotasa)
+                oORDR.Expenses.LineTotal = cTotalesEcotasa
+            End If
 
 
             If strExiste <> "" Then
