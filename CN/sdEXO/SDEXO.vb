@@ -173,8 +173,10 @@ Public MustInherit Class SDEXO
                                                                 Me.Company.DbServerType = SAPbobsCOM.BoDataServerTypes.dst_MSSQL2008
                                                             ElseIf ConfigXMLDocument.DocumentElement.ChildNodes(i).ChildNodes(j).Attributes(k).InnerText = "SQL2012" Then
                                                                 Me.Company.DbServerType = SAPbobsCOM.BoDataServerTypes.dst_MSSQL2012
-                                                                'ElseIf ConfigXMLDocument.DocumentElement.ChildNodes(i).ChildNodes(j).Attributes(k).InnerText = "SQL2014" Then
-                                                                '    Me.Company.DbServerType = SAPbobsCOM.BoDataServerTypes.dst_MSSQL2014
+                                                            ElseIf ConfigXMLDocument.DocumentElement.ChildNodes(i).ChildNodes(j).Attributes(k).InnerText = "SQL2014" Then
+                                                                Me.Company.DbServerType = SAPbobsCOM.BoDataServerTypes.dst_MSSQL2014
+                                                            ElseIf ConfigXMLDocument.DocumentElement.ChildNodes(i).ChildNodes(j).Attributes(k).InnerText = "SQL2016" Then
+                                                                Me.Company.DbServerType = SAPbobsCOM.BoDataServerTypes.dst_MSSQL2016
                                                             End If
                                                         End If
 
